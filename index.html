@@ -14,122 +14,102 @@
 
     body {
       font-family: Arial, Helvetica, sans-serif;
-      background:
-        radial-gradient(circle at top, #2a0000 0%, #0d0d0d 38%, #050505 100%);
+      background: linear-gradient(#250000, #090909 35%, #000);
       color: white;
       min-height: 100vh;
     }
 
     .page {
-      max-width: 750px;
+      max-width: 760px;
       margin: auto;
-      padding: 28px 18px 50px;
+      padding: 24px 16px 50px;
     }
 
     .hero {
       text-align: center;
-      padding: 30px 20px;
-      border: 1px solid #3c3c3c;
-      border-radius: 28px;
-      background: rgba(18,18,18,.92);
-      box-shadow:
-        0 0 35px rgba(255,0,0,.15),
-        inset 0 0 30px rgba(255,255,255,.02);
+      background: #111;
+      border: 1px solid #3a3a3a;
+      border-radius: 24px;
+      padding: 28px 20px;
+      box-shadow: 0 0 28px rgba(255,0,0,.18);
     }
 
     .logo {
-      width: 135px;
-      height: 135px;
+      width: 130px;
+      height: 130px;
       margin: 0 auto 18px;
       border-radius: 50%;
+      border: 4px solid #e21d25;
+      background: #050505;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(145deg, #161616, #050505);
-      border: 4px solid #d71920;
-      box-shadow:
-        0 0 12px #d71920,
-        0 0 32px rgba(215,25,32,.55);
-      font-size: 49px;
+      font-size: 40px;
       font-weight: 900;
-      letter-spacing: -8px;
-      padding-right: 8px;
+      box-shadow: 0 0 25px rgba(226,29,37,.55);
     }
 
-    .logo .r {
-      color: white;
-    }
-
-    .logo .three {
-      color: #d71920;
+    .logo span {
+      color: #e21d25;
     }
 
     h1 {
-      font-size: clamp(31px, 8vw, 52px);
+      font-size: 42px;
       line-height: 1.05;
       text-transform: uppercase;
-      font-weight: 900;
-      letter-spacing: 1px;
     }
 
     h1 span {
       color: #e21d25;
-      text-shadow: 0 0 16px rgba(226,29,37,.5);
     }
 
     .tagline {
-      margin-top: 13px;
-      color: #cfcfcf;
+      margin-top: 14px;
+      color: #ccc;
       font-size: 17px;
       line-height: 1.5;
     }
 
     .owner {
-      margin-top: 15px;
-      font-weight: 700;
-      color: #ffffff;
+      margin-top: 14px;
+      font-weight: bold;
+      font-size: 18px;
     }
 
     .buttons {
       display: grid;
       gap: 12px;
-      margin-top: 26px;
+      margin-top: 24px;
     }
 
     .button {
+      display: block;
       text-decoration: none;
       color: white;
-      padding: 16px 18px;
+      background: linear-gradient(135deg,#e21d25,#8b090e);
+      border: 1px solid #ff4a50;
+      padding: 16px;
       border-radius: 14px;
       font-size: 18px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #d71920, #8c0b10);
-      border: 1px solid #ef4147;
-      box-shadow: 0 7px 20px rgba(215,25,32,.23);
-      transition: .2s;
+      font-weight: bold;
     }
 
-    .button:hover {
-      transform: translateY(-2px);
-    }
-
-    .button.secondary {
-      background: #171717;
-      border-color: #454545;
-      box-shadow: none;
+    .button.dark {
+      background: #1a1a1a;
+      border-color: #444;
     }
 
     .section {
-      margin-top: 22px;
-      background: rgba(18,18,18,.94);
-      border: 1px solid #343434;
-      border-radius: 22px;
-      padding: 24px;
+      margin-top: 20px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 20px;
+      padding: 22px;
     }
 
     .section h2 {
-      font-size: 25px;
       margin-bottom: 16px;
+      font-size: 26px;
       text-transform: uppercase;
     }
 
@@ -137,25 +117,162 @@
       color: #e21d25;
     }
 
-    .services {
+    .services,
+    .gallery {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
 
-    .service {
-      background: #0b0b0b;
-      border: 1px solid #292929;
+    .card {
+      min-height: 80px;
+      background: #080808;
+      border: 1px solid #2f2f2f;
       border-radius: 14px;
-      padding: 18px 10px;
-      text-align: center;
-      font-weight: 700;
-      min-height: 78px;
+      padding: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
+      text-align: center;
+      font-weight: bold;
     }
 
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(2, 
+    .photo {
+      aspect-ratio: 1 / 1;
+      color: #777;
+      border: 1px dashed #555;
+    }
+
+    .about {
+      color: #ccc;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .about strong {
+      color: #ff3c44;
+    }
+
+    footer {
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 520px) {
+      h1 {
+        font-size: 34px;
+      }
+
+      .services {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page">
+
+    <div class="hero">
+
+      <div class="logo">
+        R<span>3D</span>
+      </div>
+
+      <h1>
+        Remillard's<br>
+        <span>3D Printing</span>
+      </h1>
+
+      <p class="tagline">
+        Custom creations brought to life one layer at a time.
+        Single prints, custom designs, and bulk orders available.
+      </p>
+
+      <p class="owner">
+        Travis Remillard
+      </p>
+
+      <div class="buttons">
+
+        <a class="button" href="tel:7193320427">
+          📞 Call or Text 719-332-0427
+        </a>
+
+        <a class="button dark" href="mailto:Remillard1082@gmail.com">
+          ✉️ Email Me
+        </a>
+
+        <a class="button dark"
+           href="https://www.facebook.com/share/1889uPhHE9/"
+           target="_blank">
+          🔵 Visit Facebook
+        </a>
+
+      </div>
+    </div>
+
+
+    <div class="section">
+
+      <h2>What We <span>Print</span></h2>
+
+      <div class="services">
+
+        <div class="card">🔥 Custom 3D Prints</div>
+        <div class="card">🧩 Fidgets & Toys</div>
+        <div class="card">🎣 Fishing & Hunting Gear</div>
+        <div class="card">🏠 Signs & Home Decor</div>
+        <div class="card">🧰 Tools & Accessories</div>
+        <div class="card">📦 Bulk & Single Orders</div>
+
+      </div>
+    </div>
+
+
+    <div class="section">
+
+      <h2>Our <span>Work</span></h2>
+
+      <div class="gallery">
+
+        <div class="card photo">Photo Coming Soon</div>
+        <div class="card photo">Photo Coming Soon</div>
+        <div class="card photo">Photo Coming Soon</div>
+        <div class="card photo">Photo Coming Soon</div>
+
+      </div>
+    </div>
+
+
+    <div class="section">
+
+      <h2>Have an <span>Idea?</span></h2>
+
+      <p class="about">
+        If you can imagine it, there's a good chance we can print it.
+        <strong>No job too big or too small.</strong>
+        Send us your idea, photo, or project and let's see what we can create.
+      </p>
+
+      <div class="buttons">
+
+        <a class="button" href="sms:7193320427">
+          💬 Get a Quote
+        </a>
+
+      </div>
+    </div>
+
+
+    <footer>
+      © 2026 Remillard's 3D Printing
+    </footer>
+
+  </div>
+
+</body>
+</html>
