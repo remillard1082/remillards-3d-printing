@@ -610,11 +610,6 @@
           </label>
 
           <label>
-            What did we make for you?
-            <input type="text" id="reviewProject" maxlength="80" required placeholder="Example: Custom business sign">
-          </label>
-
-          <label>
             Rating
             <select id="reviewRating" required>
               <option value="5" selected>★★★★★ — 5 stars</option>
@@ -847,14 +842,13 @@
       var button = document.getElementById('reviewSubmitButton');
 
       var name = document.getElementById('reviewName').value.trim();
-      var project = document.getElementById('reviewProject').value.trim();
       var rating = Number(document.getElementById('reviewRating').value);
       var review = document.getElementById('reviewText').value.trim();
       var consent = document.getElementById('reviewConsent').checked;
       var photoInput = document.getElementById('reviewPhoto');
       var photoFile = photoInput.files && photoInput.files[0];
 
-      if (!name || !project || !rating || !review || !consent) {
+      if (!name || !rating || !review || !consent) {
         setReviewStatus('Please complete all required fields and check the permission box.', 'error');
         return;
       }
@@ -876,11 +870,9 @@
         }
 
         var payload = {
-          name: name,
-          project: project,
+          customer_name: name,
           rating: rating,
-          review: review,
-          consent: true,
+          review_text: review,
           photo_url: photoUrl || null,
           approved: false
         };
@@ -960,7 +952,7 @@
           SUPABASE_URL +
           '/rest/v1/' + REVIEW_TABLE +
           '?approved=eq.true' +
-          '&select=name,project,rating,review,photo_url,created_at' +
+          '&select=customer_name,rating,review_text,photo_url,created_at' +
           '&order=created_at.desc';
 
         var response = await fetch(url, {
@@ -988,10 +980,9 @@
           return (
             '<div class="review-card">' +
               '<div class="review-stars">' + makeStars(item.rating) + '</div>' +
-              '<div>' + escapeHtml(item.review) + '</div>' +
+              '<div>' + escapeHtml(item.review_text) + '</div>' +
               photo +
-              '<div class="review-name">' + escapeHtml(item.name) + '</div>' +
-              '<div class="review-project">' + escapeHtml(item.project) + '</div>' +
+              '<div class="review-name">' + escapeHtml(item.customer_name) + '</div>' +
             '</div>'
           );
         }).join('');
