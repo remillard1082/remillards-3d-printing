@@ -4,216 +4,667 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Review Admin | Remillard's 3D Printing</title>
+
 <style>
 :root{color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:#080808;color:#fff;font-family:Arial,Helvetica,sans-serif}
-.wrap{max-width:760px;margin:auto;padding:22px}
-.card{background:#121212;border:1px solid #333;border-radius:22px;padding:22px;margin:18px 0}
-h1{margin:0 0 8px;font-size:32px} h2{margin-top:0}
-.muted{color:#aaa;line-height:1.45}
-input,button{width:100%;font-size:18px;border-radius:14px;padding:15px;margin:8px 0}
-input{background:#080808;color:#fff;border:1px solid #555}
-button{border:0;font-weight:800;cursor:pointer}
-.primary{background:#e31b23;color:#fff}
-.approve{background:#17883e;color:#fff}
-.delete{background:#b71c1c;color:#fff}
-.secondary{background:#333;color:#fff}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.review{border-top:1px solid #333;padding-top:18px;margin-top:18px}
-.stars{font-size:22px}
-.review img{width:100%;max-height:420px;object-fit:contain;border-radius:14px;background:#000;margin:12px 0}
-.status{padding:12px;border-radius:12px;margin-top:10px;display:none}
-.ok{display:block;background:#123b20;border:1px solid #238647}
-.err{display:block;background:#431313;border:1px solid #a33}
-.topbar{display:flex;gap:10px;align-items:center;justify-content:space-between}
-.topbar button{width:auto;padding:10px 14px}
-@media(max-width:520px){.row{grid-template-columns:1fr} h1{font-size:27px}}
+
+body{
+  margin:0;
+  background:#080808;
+  color:#fff;
+  font-family:Arial,Helvetica,sans-serif
+}
+
+.wrap{
+  max-width:760px;
+  margin:auto;
+  padding:22px
+}
+
+.card{
+  background:#121212;
+  border:1px solid #333;
+  border-radius:22px;
+  padding:22px;
+  margin:18px 0
+}
+
+h1{
+  margin:0 0 8px;
+  font-size:32px
+}
+
+h2{margin-top:0}
+
+.muted{
+  color:#aaa;
+  line-height:1.45
+}
+
+input,button{
+  width:100%;
+  font-size:18px;
+  border-radius:14px;
+  padding:15px;
+  margin:8px 0
+}
+
+input{
+  background:#080808;
+  color:#fff;
+  border:1px solid #555
+}
+
+button{
+  border:0;
+  font-weight:800;
+  cursor:pointer
+}
+
+.primary{
+  background:#e31b23;
+  color:#fff
+}
+
+.approve{
+  background:#17883e;
+  color:#fff
+}
+
+.delete{
+  background:#b71c1c;
+  color:#fff
+}
+
+.secondary{
+  background:#333;
+  color:#fff
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px
+}
+
+.review{
+  border-top:1px solid #333;
+  padding-top:18px;
+  margin-top:18px
+}
+
+.stars{
+  font-size:22px
+}
+
+.review img{
+  width:100%;
+  max-height:420px;
+  object-fit:contain;
+  border-radius:14px;
+  background:#000;
+  margin:12px 0
+}
+
+.status{
+  padding:12px;
+  border-radius:12px;
+  margin-top:10px;
+  display:none
+}
+
+.ok{
+  display:block;
+  background:#123b20;
+  border:1px solid #238647
+}
+
+.err{
+  display:block;
+  background:#431313;
+  border:1px solid #a33
+}
+
+.topbar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between
+}
+
+.topbar button{
+  width:auto;
+  padding:10px 14px
+}
+
+@media(max-width:520px){
+  .row{grid-template-columns:1fr}
+  h1{font-size:27px}
+}
 </style>
 </head>
+
 <body>
+
 <div class="wrap">
+
   <div class="card">
+
     <h1>Review Admin</h1>
-    <p class="muted">Private approval page for Remillard's 3D Printing.</p>
+
+    <p class="muted">
+      Private review management for Remillard's 3D Printing.
+    </p>
+
     <div id="loginBox">
-      <input id="email" type="email" autocomplete="username" placeholder="Admin email">
-      <input id="password" type="password" autocomplete="current-password" placeholder="Password">
-      <button class="primary" onclick="signIn()">Sign In</button>
+
+      <input
+        id="adminKey"
+        type="password"
+        autocomplete="current-password"
+        placeholder="Admin Key"
+        onkeydown="if(event.key==='Enter') signIn()"
+      >
+
+      <button class="primary" onclick="signIn()">
+        Open Review Manager
+      </button>
+
     </div>
+
     <div id="adminBox" hidden>
+
       <div class="topbar">
-        <strong id="signedInAs"></strong>
-        <button class="secondary" onclick="signOut()">Sign Out</button>
+
+        <strong>Review Manager</strong>
+
+        <button class="secondary" onclick="signOut()">
+          Sign Out
+        </button>
+
       </div>
+
       <div id="reviews"></div>
+
     </div>
+
     <div id="status" class="status"></div>
+
   </div>
+
 </div>
+
 <script>
-const SUPABASE_URL = 'https://dqxilrvvlzfelhbilacy.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_x4luFP2eIt0egjEREup7VQ_TFuSXOBB';
-const TABLE = 'Reviews';
-let accessToken = sessionStorage.getItem('review_admin_access_token') || '';
-let refreshToken = sessionStorage.getItem('review_admin_refresh_token') || '';
+
+const FUNCTION_URL =
+  'https://dqxilrvvlzfelhbilacy.supabase.co/functions/v1/manage-reviews';
+
+let adminKey =
+  sessionStorage.getItem('review_admin_key') || '';
+
 
 function msg(text, ok=false) {
-  const el=document.getElementById('status');
-  el.textContent=text; el.className='status '+(ok?'ok':'err');
-}
-function clearMsg() { document.getElementById('status').className='status'; }
 
-async function signIn() {
-  clearMsg();
-  const email=document.getElementById('email').value.trim();
-  const password=document.getElementById('password').value;
-  if(!email || !password) return msg('Enter your email and password.');
-  try {
-    const r=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password', {
-      method:'POST',
-      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({email,password})
-    });
-    const d=await r.json();
-    if(!r.ok) throw new Error(d.error_description || d.msg || d.message || 'Sign in failed.');
-    accessToken=d.access_token; refreshToken=d.refresh_token || '';
-    sessionStorage.setItem('review_admin_access_token',accessToken);
-    sessionStorage.setItem('review_admin_refresh_token',refreshToken);
-    document.getElementById('signedInAs').textContent=email;
-    showAdmin();
-    await loadReviews();
-  } catch(e) { msg(e.message); }
+  const el = document.getElementById('status');
+
+  el.textContent = text;
+
+  el.className =
+    'status ' + (ok ? 'ok' : 'err');
 }
 
-async function refreshSession() {
-  if(!refreshToken) return false;
-  const r=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token', {
-    method:'POST',
-    headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
-    body:JSON.stringify({refresh_token:refreshToken})
-  });
-  if(!r.ok) return false;
-  const d=await r.json();
-  accessToken=d.access_token; refreshToken=d.refresh_token || refreshToken;
-  sessionStorage.setItem('review_admin_access_token',accessToken);
-  sessionStorage.setItem('review_admin_refresh_token',refreshToken);
-  return true;
+
+function clearMsg() {
+
+  const el = document.getElementById('status');
+
+  el.textContent = '';
+
+  el.className = 'status';
 }
 
-async function api(path, options={}, retry=true) {
-  options.headers=Object.assign({'apikey':SUPABASE_KEY,'Authorization':'Bearer '+accessToken}, options.headers||{});
-  let r=await fetch(SUPABASE_URL+path, options);
-  if(r.status===401 && retry && await refreshSession()) return api(path,options,false);
-  return r;
-}
 
 function showAdmin() {
-  document.getElementById('loginBox').hidden=true;
-  document.getElementById('adminBox').hidden=false;
+
+  document.getElementById('loginBox').hidden = true;
+
+  document.getElementById('adminBox').hidden = false;
 }
+
+
+function showLogin() {
+
+  document.getElementById('adminBox').hidden = true;
+
+  document.getElementById('loginBox').hidden = false;
+}
+
+
+async function callAdmin(action, id=null) {
+
+  const body = { action };
+
+  if(id !== null) {
+    body.id = id;
+  }
+
+  const response = await fetch(
+    FUNCTION_URL,
+    {
+      method:'POST',
+
+      headers:{
+        'Content-Type':'application/json',
+        'x-admin-key':adminKey
+      },
+
+      body:JSON.stringify(body)
+    }
+  );
+
+  let data;
+
+  try {
+    data = await response.json();
+  }
+  catch(e) {
+    data = {};
+  }
+
+  if(!response.ok) {
+
+    const error =
+      data.error ||
+      'Request failed.';
+
+    throw new Error(error);
+  }
+
+  return data;
+}
+
+
+async function signIn() {
+
+  clearMsg();
+
+  const key =
+    document.getElementById('adminKey').value.trim();
+
+  if(!key) {
+
+    return msg(
+      'Enter your admin key.'
+    );
+  }
+
+  adminKey = key;
+
+  try {
+
+    const reviews =
+      await callAdmin('list');
+
+    sessionStorage.setItem(
+      'review_admin_key',
+      adminKey
+    );
+
+    showAdmin();
+
+    renderReviews(reviews);
+
+  }
+  catch(e) {
+
+    adminKey = '';
+
+    sessionStorage.removeItem(
+      'review_admin_key'
+    );
+
+    msg(
+      'Access denied. Check your admin key.'
+    );
+  }
+}
+
+
 function signOut() {
-  sessionStorage.removeItem('review_admin_access_token');
-  sessionStorage.removeItem('review_admin_refresh_token');
-  accessToken=''; refreshToken='';
-  document.getElementById('adminBox').hidden=true;
-  document.getElementById('loginBox').hidden=false;
-  document.getElementById('password').value='';
+
+  sessionStorage.removeItem(
+    'review_admin_key'
+  );
+
+  adminKey = '';
+
+  document.getElementById(
+    'adminKey'
+  ).value = '';
+
+  document.getElementById(
+    'reviews'
+  ).innerHTML = '';
+
+  showLogin();
+
   clearMsg();
 }
+
 
 function esc(v) {
-  return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  return String(v ?? '')
+    .replace(
+      /[&<>"']/g,
+      c => ({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#39;'
+      }[c])
+    );
 }
+
 
 function reviewCard(x, published=false) {
+
+  const rating =
+    Math.max(
+      0,
+      Math.min(
+        5,
+        Number(x.rating) || 0
+      )
+    );
+
   return `
     <div class="review" id="review-${x.id}">
-      <strong>${esc(x.customer_name)}</strong>
-      <div class="stars">${'★'.repeat(Number(x.rating)||0)}${'☆'.repeat(Math.max(0,5-(Number(x.rating)||0)))}</div>
-      <p>${esc(x.review_text)}</p>
-      ${x.photo_url ? `<img src="${esc(x.photo_url)}" alt="Customer review photo">` : ''}
-      <div class="row">
-        ${published ? '' : `<button class="approve" onclick="approveReview(${x.id})">Approve</button>`}
-        <button class="delete" onclick="deleteReview(${x.id}, ${published ? 'true' : 'false'})">Delete</button>
+
+      <strong>
+        ${esc(x.customer_name)}
+      </strong>
+
+      <div class="stars">
+        ${'★'.repeat(rating)}
+        ${'☆'.repeat(5-rating)}
       </div>
-    </div>`;
+
+      <p>
+        ${esc(x.review_text)}
+      </p>
+
+      ${
+        x.photo_url
+        ?
+        `<img
+          src="${esc(x.photo_url)}"
+          alt="Customer review photo"
+        >`
+        :
+        ''
+      }
+
+      <div class="row">
+
+        ${
+          published
+          ?
+          ''
+          :
+          `<button
+            class="approve"
+            onclick="approveReview(${x.id})"
+          >
+            Approve
+          </button>`
+        }
+
+        <button
+          class="delete"
+          onclick="deleteReview(
+            ${x.id},
+            ${published ? 'true' : 'false'}
+          )"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+  `;
 }
 
-async function loadReviews() {
-  clearMsg();
 
-  const pendingResp = await api('/rest/v1/'+TABLE+'?select=id,created_at,customer_name,rating,review_text,approved,photo_url&approved=eq.false&order=created_at.desc');
-  if(!pendingResp.ok) {
-    const t=await pendingResp.text();
-    return msg('Could not load pending reviews. '+t);
-  }
+function renderReviews(reviews) {
 
-  const publishedResp = await api('/rest/v1/'+TABLE+'?select=id,created_at,customer_name,rating,review_text,approved,photo_url&approved=eq.true&order=created_at.desc');
-  if(!publishedResp.ok) {
-    const t=await publishedResp.text();
-    return msg('Could not load published reviews. '+t);
-  }
+  const pending =
+    reviews.filter(
+      x => x.approved !== true
+    );
 
-  const pending = await pendingResp.json();
-  const published = await publishedResp.json();
-  const box=document.getElementById('reviews');
+  const published =
+    reviews.filter(
+      x => x.approved === true
+    );
 
-  let output = '<h2>Pending Reviews ('+pending.length+')</h2>';
+  const box =
+    document.getElementById(
+      'reviews'
+    );
+
+  let output =
+    '<h2 style="margin-top:28px;">Pending Reviews (' +
+    pending.length +
+    ')</h2>';
+
+
   if(!pending.length) {
-    output += '<div class="review"><p class="muted">No pending reviews.</p></div>';
-  } else {
-    output += pending.map(x=>reviewCard(x,false)).join('');
+
+    output += `
+      <div class="review">
+        <p class="muted">
+          No pending reviews.
+        </p>
+      </div>
+    `;
+  }
+  else {
+
+    output +=
+      pending
+      .map(
+        x => reviewCard(x,false)
+      )
+      .join('');
   }
 
-  output += '<h2 style="margin-top:34px;">Published Reviews ('+published.length+')</h2>';
+
+  output +=
+    '<h2 style="margin-top:34px;">Published Reviews (' +
+    published.length +
+    ')</h2>';
+
+
   if(!published.length) {
-    output += '<div class="review"><p class="muted">No published reviews yet.</p></div>';
-  } else {
-    output += published.map(x=>reviewCard(x,true)).join('');
+
+    output += `
+      <div class="review">
+        <p class="muted">
+          No published reviews yet.
+        </p>
+      </div>
+    `;
   }
+  else {
+
+    output +=
+      published
+      .map(
+        x => reviewCard(x,true)
+      )
+      .join('');
+  }
+
 
   box.innerHTML = output;
 }
 
+
+async function loadReviews() {
+
+  clearMsg();
+
+  try {
+
+    const reviews =
+      await callAdmin('list');
+
+    renderReviews(reviews);
+
+  }
+  catch(e) {
+
+    if(
+      e.message
+      .toLowerCase()
+      .includes('unauthorized')
+    ) {
+
+      signOut();
+
+      return msg(
+        'Your admin session has expired. Sign in again.'
+      );
+    }
+
+    msg(
+      'Could not load reviews. ' +
+      e.message
+    );
+  }
+}
+
+
 async function approveReview(id) {
-  if(!confirm('Approve this review and publish it on the website?')) return;
-  const r=await api('/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(id), {
-    method:'PATCH',
-    headers:{'Content-Type':'application/json','Prefer':'return=minimal'},
-    body:JSON.stringify({approved:true})
-  });
-  if(!r.ok) return msg('Could not approve review. '+await r.text());
-  msg('Review approved.',true); await loadReviews();
+
+  if(
+    !confirm(
+      'Approve this review and publish it on the website?'
+    )
+  ) {
+    return;
+  }
+
+  clearMsg();
+
+  try {
+
+    await callAdmin(
+      'approve',
+      id
+    );
+
+    msg(
+      'Review approved and published.',
+      true
+    );
+
+    await loadReviews();
+
+  }
+  catch(e) {
+
+    msg(
+      'Could not approve review. ' +
+      e.message
+    );
+  }
 }
 
-async function deleteReview(id, published=false) {
-  const text = published
-    ? 'Permanently delete this published review? It will disappear from the website immediately.'
-    : 'Permanently delete this pending review?';
-  if(!confirm(text)) return;
 
-  const r=await api('/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(id), {
-    method:'DELETE',
-    headers:{'Prefer':'return=minimal'}
-  });
+async function deleteReview(
+  id,
+  published=false
+) {
 
-  if(!r.ok) return msg('Could not delete review. '+await r.text());
-  msg(published ? 'Published review deleted.' : 'Pending review deleted.',true);
-  await loadReviews();
+  const text =
+    published
+    ?
+    'Permanently delete this published review? It will disappear from the website immediately.'
+    :
+    'Permanently delete this pending review?';
+
+
+  if(!confirm(text)) {
+    return;
+  }
+
+
+  clearMsg();
+
+
+  try {
+
+    await callAdmin(
+      'delete',
+      id
+    );
+
+    msg(
+      published
+      ?
+      'Published review deleted.'
+      :
+      'Pending review deleted.',
+      true
+    );
+
+    await loadReviews();
+
+  }
+  catch(e) {
+
+    msg(
+      'Could not delete review. ' +
+      e.message
+    );
+  }
 }
+
 
 (async()=>{
-  if(accessToken) {
-    showAdmin();
-    const r=await api('/auth/v1/user');
-    if(r.ok) {
-      const u=await r.json();
-      document.getElementById('signedInAs').textContent=u.email || 'Admin';
-      await loadReviews();
-    } else signOut();
+
+  if(adminKey) {
+
+    try {
+
+      const reviews =
+        await callAdmin('list');
+
+      showAdmin();
+
+      renderReviews(reviews);
+
+    }
+    catch(e) {
+
+      sessionStorage.removeItem(
+        'review_admin_key'
+      );
+
+      adminKey = '';
+
+      showLogin();
+    }
   }
+
 })();
+
 </script>
+
 </body>
 </html>
