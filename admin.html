@@ -126,29 +126,54 @@ function esc(v) {
   return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-async function loadReviews() {
-  clearMsg();
-  const r=await api('/rest/v1/'+TABLE+'?select=id,created_at,customer_name,rating,review_text,approved,photo_url&approved=eq.false&order=created_at.desc');
-  if(!r.ok) {
-    const t=await r.text(); return msg('Could not load pending reviews. '+t);
-  }
-  const rows=await r.json();
-  const box=document.getElementById('reviews');
-  if(!rows.length) {
-    box.innerHTML='<div class="review"><h2>No pending reviews</h2><p class="muted">You are all caught up.</p></div>';
-    return;
-  }
-  box.innerHTML='<h2>Pending Reviews ('+rows.length+')</h2>'+rows.map(x=>`
+function reviewCard(x, published=false) {
+  return `
     <div class="review" id="review-${x.id}">
       <strong>${esc(x.customer_name)}</strong>
       <div class="stars">${'★'.repeat(Number(x.rating)||0)}${'☆'.repeat(Math.max(0,5-(Number(x.rating)||0)))}</div>
       <p>${esc(x.review_text)}</p>
       ${x.photo_url ? `<img src="${esc(x.photo_url)}" alt="Customer review photo">` : ''}
       <div class="row">
-        <button class="approve" onclick="approveReview(${x.id})">Approve</button>
-        <button class="delete" onclick="deleteReview(${x.id})">Delete</button>
+        ${published ? '' : `<button class="approve" onclick="approveReview(${x.id})">Approve</button>`}
+        <button class="delete" onclick="deleteReview(${x.id}, ${published ? 'true' : 'false'})">Delete</button>
       </div>
-    </div>`).join('');
+    </div>`;
+}
+
+async function loadReviews() {
+  clearMsg();
+
+  const pendingResp = await api('/rest/v1/'+TABLE+'?select=id,created_at,customer_name,rating,review_text,approved,photo_url&approved=eq.false&order=created_at.desc');
+  if(!pendingResp.ok) {
+    const t=await pendingResp.text();
+    return msg('Could not load pending reviews. '+t);
+  }
+
+  const publishedResp = await api('/rest/v1/'+TABLE+'?select=id,created_at,customer_name,rating,review_text,approved,photo_url&approved=eq.true&order=created_at.desc');
+  if(!publishedResp.ok) {
+    const t=await publishedResp.text();
+    return msg('Could not load published reviews. '+t);
+  }
+
+  const pending = await pendingResp.json();
+  const published = await publishedResp.json();
+  const box=document.getElementById('reviews');
+
+  let output = '<h2>Pending Reviews ('+pending.length+')</h2>';
+  if(!pending.length) {
+    output += '<div class="review"><p class="muted">No pending reviews.</p></div>';
+  } else {
+    output += pending.map(x=>reviewCard(x,false)).join('');
+  }
+
+  output += '<h2 style="margin-top:34px;">Published Reviews ('+published.length+')</h2>';
+  if(!published.length) {
+    output += '<div class="review"><p class="muted">No published reviews yet.</p></div>';
+  } else {
+    output += published.map(x=>reviewCard(x,true)).join('');
+  }
+
+  box.innerHTML = output;
 }
 
 async function approveReview(id) {
@@ -162,14 +187,20 @@ async function approveReview(id) {
   msg('Review approved.',true); await loadReviews();
 }
 
-async function deleteReview(id) {
-  if(!confirm('Permanently delete this review?')) return;
+async function deleteReview(id, published=false) {
+  const text = published
+    ? 'Permanently delete this published review? It will disappear from the website immediately.'
+    : 'Permanently delete this pending review?';
+  if(!confirm(text)) return;
+
   const r=await api('/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(id), {
     method:'DELETE',
     headers:{'Prefer':'return=minimal'}
   });
+
   if(!r.ok) return msg('Could not delete review. '+await r.text());
-  msg('Review deleted.',true); await loadReviews();
+  msg(published ? 'Published review deleted.' : 'Pending review deleted.',true);
+  await loadReviews();
 }
 
 (async()=>{
