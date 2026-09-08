@@ -437,6 +437,53 @@
       text-align: center;
     }
 
+
+    .review-photo-preview {
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-top: 10px;
+      display: none;
+      border: 1px solid #333;
+    }
+
+    .review-photo {
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-top: 12px;
+      border: 1px solid #333;
+    }
+
+    .review-status {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 12px;
+      line-height: 1.45;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .review-status.show { display: block; }
+    .review-status.success {
+      background: rgba(35, 150, 70, .15);
+      border: 1px solid #2f9e52;
+      color: #bff3cc;
+    }
+
+    .review-status.error {
+      background: rgba(226, 29, 37, .15);
+      border: 1px solid #e21d25;
+      color: #ffd0d2;
+    }
+
+    .review-submit-button:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
     @media (max-width: 520px) {
       h1 {
         font-size: 34px;
@@ -583,13 +630,27 @@
             <textarea id="reviewText" maxlength="1200" required placeholder="Tell us about the quality, communication, turnaround, or your overall experience."></textarea>
           </label>
 
-          <label class="review-consent">
-            <input type="checkbox" id="reviewConsent" required>
-            <span>I give Remillard's 3D Printing permission to publish this review using my name as entered above.</span>
+          <label>
+            Add a photo <span style="font-weight:normal;color:#888;">(optional)</span>
+            <input type="file" id="reviewPhoto" accept="image/jpeg,image/png,image/webp" onchange="previewReviewPhoto(event)">
+            <img id="reviewPhotoPreview" class="review-photo-preview" alt="Selected review photo preview">
           </label>
 
-          <button class="button" type="submit" style="width:100%;">Send Review for Approval</button>
-          <p class="review-note">Submitting opens your email app with the review filled in. Nothing is posted publicly until it is reviewed and approved.</p>
+          <label class="review-consent">
+            <input type="checkbox" id="reviewConsent" required>
+            <span>I give Remillard's 3D Printing permission to publish this review and any photo I choose to upload, using my name as entered above.</span>
+          </label>
+
+          <button class="button review-submit-button" id="reviewSubmitButton" type="submit" style="width:100%;">
+            Submit Review
+          </button>
+
+          <div class="review-status" id="reviewStatus" role="status" aria-live="polite"></div>
+
+          <p class="review-note">
+            Your review is sent directly to Remillard's 3D Printing for approval.
+            It will not appear publicly until it has been approved.
+          </p>
         </form>
       </div>
     </div>
@@ -673,11 +734,18 @@
   </div>
 
   <script>
-
+    // Supabase connection for customer reviews.
+    // The publishable key is intended for browser use. Supabase RLS policies
+    // still control what visitors are allowed to read and submit.
+    const SUPABASE_URL = 'https://dqxilrvvlzfelhbilacy.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_x4luFP2eIt0egjEREup7VQ_TFuSXOBB';
+    const REVIEW_TABLE = 'reviews';
+    const REVIEW_PHOTO_BUCKET = 'review-photos';
 
     function toggleReviewForm() {
       var wrap = document.getElementById('reviewFormWrap');
       wrap.classList.toggle('open');
+
       if (wrap.classList.contains('open')) {
         setTimeout(function () {
           document.getElementById('reviewName').focus();
@@ -685,35 +753,254 @@
       }
     }
 
-    function submitReview(event) {
+    function setReviewStatus(message, type) {
+      var status = document.getElementById('reviewStatus');
+      status.textContent = message;
+      status.className = 'review-status show ' + (type || '');
+    }
+
+    function clearReviewStatus() {
+      var status = document.getElementById('reviewStatus');
+      status.textContent = '';
+      status.className = 'review-status';
+    }
+
+    function previewReviewPhoto(event) {
+      var file = event.target.files && event.target.files[0];
+      var preview = document.getElementById('reviewPhotoPreview');
+
+      if (!file) {
+        preview.removeAttribute('src');
+        preview.style.display = 'none';
+        return;
+      }
+
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        event.target.value = '';
+        preview.removeAttribute('src');
+        preview.style.display = 'none';
+        setReviewStatus('Please choose a JPG, PNG, or WEBP image.', 'error');
+        return;
+      }
+
+      if (file.size > 8 * 1024 * 1024) {
+        event.target.value = '';
+        preview.removeAttribute('src');
+        preview.style.display = 'none';
+        setReviewStatus('Please choose a photo smaller than 8 MB.', 'error');
+        return;
+      }
+
+      clearReviewStatus();
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function uploadReviewPhoto(file) {
+      if (!file) return '';
+
+      var extension = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      var safeExtension = extension.replace(/[^a-z0-9]/g, '') || 'jpg';
+      var fileName =
+        Date.now() + '-' +
+        Math.random().toString(36).slice(2, 10) +
+        '.' + safeExtension;
+
+      var response = await fetch(
+        SUPABASE_URL + '/storage/v1/object/' + REVIEW_PHOTO_BUCKET + '/' + encodeURIComponent(fileName),
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': file.type,
+            'x-upsert': 'false'
+          },
+          body: file
+        }
+      );
+
+      if (!response.ok) {
+        var details = '';
+        try {
+          details = await response.text();
+        } catch (e) {}
+        throw new Error('Photo upload failed' + (details ? ': ' + details : ''));
+      }
+
+      return SUPABASE_URL +
+        '/storage/v1/object/public/' +
+        REVIEW_PHOTO_BUCKET + '/' +
+        encodeURIComponent(fileName);
+    }
+
+    async function submitReview(event) {
       event.preventDefault();
+      clearReviewStatus();
+
+      var form = document.getElementById('reviewForm');
+      var button = document.getElementById('reviewSubmitButton');
 
       var name = document.getElementById('reviewName').value.trim();
       var project = document.getElementById('reviewProject').value.trim();
-      var rating = document.getElementById('reviewRating').value;
+      var rating = Number(document.getElementById('reviewRating').value);
       var review = document.getElementById('reviewText').value.trim();
       var consent = document.getElementById('reviewConsent').checked;
+      var photoInput = document.getElementById('reviewPhoto');
+      var photoFile = photoInput.files && photoInput.files[0];
 
-      if (!name || !project || !rating || !review || !consent) return;
+      if (!name || !project || !rating || !review || !consent) {
+        setReviewStatus('Please complete all required fields and check the permission box.', 'error');
+        return;
+      }
 
-      var stars = '★★★★★'.slice(0, Number(rating)) + '☆☆☆☆☆'.slice(0, 5 - Number(rating));
-      var subject = 'Customer Review - ' + name;
-      var body = [
-        'CUSTOMER REVIEW SUBMISSION',
-        '',
-        'Name: ' + name,
-        'Project: ' + project,
-        'Rating: ' + stars + ' (' + rating + '/5)',
-        '',
-        'Review:',
-        review,
-        '',
-        'Permission to publish: YES',
-        '',
-        'Submitted from the Remillard\'s 3D Printing website.'
-      ].join('\n');
+      if (rating < 1 || rating > 5) {
+        setReviewStatus('Please select a valid star rating.', 'error');
+        return;
+      }
 
-      window.location.href = 'mailto:Remillard1082@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      button.disabled = true;
+      button.textContent = photoFile ? 'Uploading Photo…' : 'Submitting Review…';
+
+      try {
+        var photoUrl = '';
+
+        if (photoFile) {
+          photoUrl = await uploadReviewPhoto(photoFile);
+          button.textContent = 'Submitting Review…';
+        }
+
+        var payload = {
+          name: name,
+          project: project,
+          rating: rating,
+          review: review,
+          consent: true,
+          photo_url: photoUrl || null,
+          approved: false
+        };
+
+        var response = await fetch(
+          SUPABASE_URL + '/rest/v1/' + REVIEW_TABLE,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_KEY,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(payload)
+          }
+        );
+
+        if (!response.ok) {
+          var details = '';
+          try {
+            details = await response.text();
+          } catch (e) {}
+          throw new Error('Review submission failed' + (details ? ': ' + details : ''));
+        }
+
+        form.reset();
+
+        var preview = document.getElementById('reviewPhotoPreview');
+        preview.removeAttribute('src');
+        preview.style.display = 'none';
+
+        setReviewStatus(
+          'Thank you! Your review was submitted successfully and is waiting for approval.',
+          'success'
+        );
+
+        button.textContent = 'Review Submitted';
+
+        setTimeout(function () {
+          button.disabled = false;
+          button.textContent = 'Submit Review';
+        }, 2500);
+
+      } catch (error) {
+        console.error(error);
+        setReviewStatus(
+          'Your review could not be submitted. Please try again. If the problem continues, call or text 719-332-0427.',
+          'error'
+        );
+
+        button.disabled = false;
+        button.textContent = 'Submit Review';
+      }
+    }
+
+    function makeStars(rating) {
+      var n = Math.max(1, Math.min(5, Number(rating) || 5));
+      return '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    async function loadApprovedReviews() {
+      var grid = document.getElementById('reviewsGrid');
+      if (!grid) return;
+
+      try {
+        var url =
+          SUPABASE_URL +
+          '/rest/v1/' + REVIEW_TABLE +
+          '?approved=eq.true' +
+          '&select=name,project,rating,review,photo_url,created_at' +
+          '&order=created_at.desc';
+
+        var response = await fetch(url, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Could not load approved reviews');
+        }
+
+        var reviews = await response.json();
+
+        if (!Array.isArray(reviews) || reviews.length === 0) {
+          return;
+        }
+
+        grid.innerHTML = reviews.map(function(item) {
+          var photo = item.photo_url
+            ? '<img class="review-photo" src="' + escapeHtml(item.photo_url) + '" alt="Customer project photo" loading="lazy">'
+            : '';
+
+          return (
+            '<div class="review-card">' +
+              '<div class="review-stars">' + makeStars(item.rating) + '</div>' +
+              '<div>' + escapeHtml(item.review) + '</div>' +
+              photo +
+              '<div class="review-name">' + escapeHtml(item.name) + '</div>' +
+              '<div class="review-project">' + escapeHtml(item.project) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+
+      } catch (error) {
+        console.error(error);
+        // Keep the friendly "Be the first featured customer review" card visible
+        // if Supabase is temporarily unavailable or not configured yet.
+      }
     }
 
     function openGalleryImage(card) {
@@ -738,6 +1025,9 @@
     document.getElementById('zelleModal').addEventListener('click', function(e) {
       if (e.target === this) closeZelle();
     });
+
+    // Load approved customer reviews when the page opens.
+    loadApprovedReviews();
 
     // Public page-view counter.
     // In a downloaded/local preview, show that it activates once published.
