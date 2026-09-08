@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Action | Remillard's Customs</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #080808;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      padding: 30px;
+      background: #151515;
+      border: 1px solid #333333;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 10px 35px rgba(0,0,0,.45);
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: 28px;
+    }
+
+    p {
+      color: #cccccc;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px 20px;
+      border: 0;
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .approve {
+      background: #17883e;
+    }
+
+    .delete {
+      background: #b71c1c;
+    }
+
+    .disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .small {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #888888;
+    }
+
+    a {
+      color: #ffffff;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h1 id="title">Review Action</h1>
+
+    <p id="message">
+      Loading...
+    </p>
+
+    <button id="actionButton" style="display:none;"></button>
+
+    <p class="small">
+      Remillard's Customs Review Manager
+    </p>
+  </div>
+
+  <script>
+    const FUNCTION_URL =
+      "https://dqxilrvvlzfelhbilacy.supabase.co/functions/v1/manage-reviews";
+
+    const params = new URLSearchParams(window.location.search);
+
+    const id = params.get("id");
+    const action = params.get("action");
+    const exp = params.get("exp");
+    const sig = params.get("sig");
+
+    const title = document.getElementById("title");
+    const message = document.getElementById("message");
+    const button = document.getElementById("actionButton");
+
+    if (
+      !id ||
+      !exp ||
+      !sig ||
+      !["approve", "delete"].includes(action)
+    ) {
+      title.textContent = "Invalid Link";
+      message.textContent =
+        "This review action link is incomplete or invalid.";
+    } else {
+
+      if (action === "approve") {
+        title.textContent = "Approve Review";
+        message.textContent =
+          "Approve this review and publish it on your website?";
+
+        button.textContent = "✓ Approve & Publish Review";
+        button.className = "approve";
+      } else {
+        title.textContent = "Deny Review";
+        message.textContent =
+          "Permanently deny and delete this review? This cannot be undone.";
+
+        button.textContent = "✕ Deny & Delete Review";
+        button.className = "delete";
+      }
+
+      button.style.display = "block";
+
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        button.classList.add("disabled");
+        button.textContent = "Processing...";
+
+        const url =
+          FUNCTION_URL +
+          "?email_action=1" +
+          "&id=" + encodeURIComponent(id) +
+          "&action=" + encodeURIComponent(action) +
+          "&exp=" + encodeURIComponent(exp) +
+          "&sig=" + encodeURIComponent(sig);
+
+        try {
+          const response = await fetch(url, {
+            method: "POST"
+          });
+
+          if (!response.ok) {
+            throw new Error("Request failed");
+          }
+
+          if (action === "approve") {
+            title.textContent = "Review Approved";
+            message.innerHTML =
+              "The review has been approved and is now published on your website.";
+          } else {
+            title.textContent = "Review Deleted";
+            message.innerHTML =
+              "The review has been denied and permanently deleted.";
+          }
+
+          button.style.display = "none";
+
+        } catch (error) {
+          title.textContent = "Could Not Complete Action";
+          message.innerHTML =
+            "The review could not be processed. Please use your Review Admin page instead.";
+
+          button.style.display = "none";
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
