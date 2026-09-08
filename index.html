@@ -812,7 +812,6 @@
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_KEY,
             'Content-Type': file.type,
             'x-upsert': 'false'
           },
@@ -883,7 +882,6 @@
             method: 'POST',
             headers: {
               'apikey': SUPABASE_KEY,
-              'Authorization': 'Bearer ' + SUPABASE_KEY,
               'Content-Type': 'application/json',
               'Prefer': 'return=minimal'
             },
@@ -958,7 +956,6 @@
         var response = await fetch(url, {
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_KEY
           }
         });
 
